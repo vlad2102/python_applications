@@ -11,8 +11,9 @@ from requests import RequestException
 
 from schemas import (HodlHodlOfferBase, HodlHodlUserBase)
 
-class Scraper_Names(Enum):
-    hodlhodl = "hodlhodl"
+
+class ScraperName(str, Enum):
+    HODLHODL = "hodlhodl"
 
 
 class HodlhodlComScraper:
@@ -113,10 +114,10 @@ class HodlhodlComScraper:
                     if rate.type != StateType.COMPLETED or not rate.result():
                         self.logger.error('Task failed')
                         continue
-                    count_offers(rate.result(), Scraper_Names.hodlhodl.name)
+                    count_offers(rate.result(), ScraperName.HODLHODL)
                     self.logger.debug("Got %s rates", rate)
 
-                    offer_counter = get_counter(Scraper_Names.hodlhodl.name)
+                    offer_counter = get_counter(ScraperName.HODLHODL)
                     return offer_counter
 
                 else:
