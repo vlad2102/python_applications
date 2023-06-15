@@ -18,18 +18,22 @@ class ScraperName(str, Enum):
 
 
 class HodlhodlComScraper:
-    def __init__(self, logger: Logger | None = None, proxy: dict = None, prefect: bool = False, **kwargs):
+    def __init__(
+        self,
+        logger: Logger | None = None,
+        prefect: bool = False,
+        total_offer_percent_to_scrape: int = 100,
+        **kwargs,
+    ) -> None:
         self._logger = logger or logging.getLogger(__name__)
-        self.proxy = None
-        self.prefect = prefect
-        self.requester = requests
-        self.total_offer_percent_to_scrape = kwargs.get("total_offer_percent_to_scrape", 100)
+        self._prefect = prefect
+        self._total_offer_percent_to_scrape = total_offer_percent_to_scrape
 
     def get_currency_list(self):
         url = 'https://hodlhodl.com/api/frontend/currencies'
         currency_list = []
         try:
-            currencies = self.requester.get(url).json()
+            currencies = requests.get(url).json()
             for curr in currencies['currencies']:
                 currency_list.append(curr.get("code"))
         except RequestException as e:
@@ -40,7 +44,7 @@ class HodlhodlComScraper:
     def get_and_post_offers(self, curr, trading_type):
         url = f"https://hodlhodl.com/api/frontend/offers?filters[currency_code]={curr}&pagination[offset]=0&filters[side]={trading_type}&facets[show_empty_rest]=true&facets[only]=false&pagination[limit]=100"
         try:
-            resp = self.requester.get(url).json()
+            resp = requests.get(url).json()
             for offer in resp.get("offers"):
                 offer_info = self.create_offer_data(offer)
                 seller_info = self.create_seller_data(offer)
@@ -109,7 +113,7 @@ class HodlhodlComScraper:
         currencies_list = self.get_currency_list()
         for curr in currencies_list:
             for trading_type in ['buy', 'sell']:
-                if self.prefect:
+                if self._prefect:
                     rate = Task(self.get_and_post_offers, name=f"get hodlhodl offers").submit(curr, trading_type,
                                                                                              return_state=True)
                     if rate.type != StateType.COMPLETED or not rate.result():
