@@ -23,19 +23,16 @@ class HodlhodlComScraper:
         logger: Logger | None = None,
         prefect: bool = False,
         total_offer_percent_to_scrape: int = 100,
-        **kwargs,
     ) -> None:
         self._logger = logger or logging.getLogger(__name__)
         self._prefect = prefect
         self._total_offer_percent_to_scrape = total_offer_percent_to_scrape
 
-    def get_currency_list(self):
+    def get_currency_list(self) -> list[str]:
         url = 'https://hodlhodl.com/api/frontend/currencies'
-        currency_list = []
         try:
             currencies = requests.get(url).json()
-            for curr in currencies['currencies']:
-                currency_list.append(curr.get("code"))
+            return [curr.get("code") for curr in currencies['currencies']]
         except RequestException as e:
             self._logger.error("Error fetching currency list: %s", e)
 
