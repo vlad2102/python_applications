@@ -1,15 +1,15 @@
 import random
-from prefect import flow
-import requests
-from requests import RequestException
 import time
-from typing import Union
-from logging import Logger
-from schemas import (HodlHodlOfferBase, HodlHodlUserBase,
-                                      settings)
 from enum import Enum
+from logging import Logger
+
+import requests
 from prefect import Task
+from prefect import flow
 from prefect.server.schemas.states import StateType
+from requests import RequestException
+
+from schemas import (HodlHodlOfferBase, HodlHodlUserBase)
 
 class Scraper_Names(Enum):
     hodlhodl = "hodlhodl"
