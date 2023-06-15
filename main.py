@@ -3,6 +3,7 @@ import random
 import time
 from enum import Enum
 from logging import Logger
+from typing import Final
 
 import requests
 from prefect import Task
@@ -13,11 +14,21 @@ from requests import RequestException
 from schemas import (HodlHodlOfferBase, HodlHodlUserBase)
 
 
+
+class _Constants:
+    class _Url:
+        CURRENCIES: Final = 'https://hodlhodl.com/api/frontend/currencies'
+        OFFERS_PATTERN: Final = "https://hodlhodl.com/api/frontend/offers?filters[currency_code]={curr}&pagination[offset]=0&filters[side]={trading_type}&facets[show_empty_rest]=true&facets[only]=false&pagination[limit]=100"
+
+    url = _Url
+
 class ScraperName(str, Enum):
     HODLHODL = "hodlhodl"
 
 
 class HodlhodlComScraper:
+    constants = _Constants
+
     def __init__(
         self,
         logger: Logger | None = None,
@@ -29,17 +40,17 @@ class HodlhodlComScraper:
         self._total_offer_percent_to_scrape = total_offer_percent_to_scrape
 
     def get_currency_list(self) -> list[str]:
-        url = 'https://hodlhodl.com/api/frontend/currencies'
         try:
-            currencies = requests.get(url).json()
+            currencies = requests.get(self.constants.url.CURRENCIES).json()
             return [curr.get("code") for curr in currencies['currencies']]
         except RequestException as e:
             self._logger.error("Error fetching currency list: %s", e)
 
-        return currency_list
-
-    def get_and_post_offers(self, curr, trading_type):
-        url = f"https://hodlhodl.com/api/frontend/offers?filters[currency_code]={curr}&pagination[offset]=0&filters[side]={trading_type}&facets[show_empty_rest]=true&facets[only]=false&pagination[limit]=100"
+    def send_offers(self, curr: str, trading_type: str) -> None:
+        url = self.constants.url.OFFERS_PATTERN.format(
+            curr=curr,
+            trading_type=trading_type,
+        )
         try:
             resp = requests.get(url).json()
             for offer in resp.get("offers"):
@@ -49,7 +60,8 @@ class HodlhodlComScraper:
         except RequestException as e:
             self._logger.error("Error fetching offers: %s", e)
 
-    def create_offer_data(self, offer):
+    @staticmethod
+    def create_offer_data(offer):
         return HodlHodlOfferBase(
             offer_identifier=offer.get("id"),
             fiat_currency=offer.get("asset_code"),
@@ -104,15 +116,15 @@ class HodlhodlComScraper:
     def starter_cli(self):
         currencies_list = self.get_currency_list()
         curr = random.choice(currencies_list)
-        self.get_and_post_offers(curr, 'sell')
+        self.send_offers(curr, 'sell')
 
     def starter(self):
         currencies_list = self.get_currency_list()
         for curr in currencies_list:
             for trading_type in ['buy', 'sell']:
                 if self._prefect:
-                    rate = Task(self.get_and_post_offers, name=f"get hodlhodl offers").submit(curr, trading_type,
-                                                                                             return_state=True)
+                    rate = Task(self.send_offers, name=f"get hodlhodl offers").submit(curr, trading_type,
+                                                                                      return_state=True)
                     if rate.type != StateType.COMPLETED or not rate.result():
                         self._logger.error('Task failed')
                         continue
@@ -123,7 +135,7 @@ class HodlhodlComScraper:
                     return offer_counter
 
                 else:
-                    self.get_and_post_offers(curr, trading_type)
+                    self.send_offers(curr, trading_type)
             time.sleep(1)  # rate limiting
 
 @flow
