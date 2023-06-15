@@ -1,12 +1,14 @@
-from pydantic import BaseModel, BaseSettings
 from datetime import datetime
+from enum import Enum
 from typing import Optional
 
-class HodlHodlOfferBase(BaseModel):
-    def __init__(self, **data):
-        # data["coin_currency"] = "bitcoin"
-        super().__init__(**data)
+from pydantic import BaseModel, BaseSettings, validator, Field
 
+
+class CoinCurrency(str, Enum):
+    BITCOIN = "bitcoin"
+
+class HodlHodlOfferBase(BaseModel):
     trading_type_name: str
     trading_type_slug: str
     # We will query our database depending on this key
@@ -25,6 +27,8 @@ class HodlHodlOfferBase(BaseModel):
     site_name: str
 
     headline: str
+
+    coin_currency: CoinCurrency = CoinCurrency.BITCOIN
 
 class HodlHodlUserBase(BaseModel):
     @classmethod
