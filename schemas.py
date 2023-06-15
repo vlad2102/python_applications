@@ -34,6 +34,14 @@ class HodlHodlOfferBase(BaseModel):
 class FeedbackType(str, Enum):
     SCORE = "SCORE"
 
+
+class SellerBase(BaseModel):
+    name: Optional[str] = Field(None, alias="login")
+    rating: Optional[float] = None
+    trades_count: Optional[int] = None
+    url: Optional[str] = None
+
+
 class HodlHodlUserBase(BaseModel):
     username: str
     feedback_type: FeedbackType = FeedbackType.SCORE
@@ -42,10 +50,8 @@ class HodlHodlUserBase(BaseModel):
     completed_trades: int
 
     profile_image: Optional[str]
-    # 'seller_name': offer.get("trader").get("login"),
-    # 'seller_rating': offer.get("trader").get("rating"),
-    # 'seller_trades_count': offer.get("trader").get("trades_count"),
-    # 'seller_url': offer.get("trader").get("url")
+
+    seller: Optional[SellerBase] = Field(None, alias="trader")
 
     last_seen: str = None
 
