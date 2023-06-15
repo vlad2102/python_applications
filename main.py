@@ -1,3 +1,4 @@
+import logging
 import random
 import time
 from enum import Enum
@@ -18,8 +19,8 @@ class ScraperName(str, Enum):
 
 class HodlhodlComScraper:
     def __init__(self, logger: Logger | None = None, proxy: dict = None, prefect: bool = False, **kwargs):
+        self._logger = logger or logging.getLogger(__name__)
         self.proxy = None
-        self.logger = logger 
         self.prefect = prefect
         self.requester = requests
         self.total_offer_percent_to_scrape = kwargs.get("total_offer_percent_to_scrape", 100)
@@ -32,7 +33,7 @@ class HodlhodlComScraper:
             for curr in currencies['currencies']:
                 currency_list.append(curr.get("code"))
         except RequestException as e:
-            self.logger.error("Error fetching currency list: %s", e)
+            self._logger.error("Error fetching currency list: %s", e)
 
         return currency_list
 
@@ -45,7 +46,7 @@ class HodlhodlComScraper:
                 seller_info = self.create_seller_data(offer)
                 self.post_data_to_api(seller_info, offer_info)
         except RequestException as e:
-            self.logger.error("Error fetching offers: %s", e)
+            self._logger.error("Error fetching offers: %s", e)
 
     def create_offer_data(self, offer):
         return HodlHodlOfferBase(
@@ -95,9 +96,9 @@ class HodlhodlComScraper:
 
         try:
             return post_request_to_api(endpoint="local_traders/create_offer", data=data, params=params,
-                                       logger=self.logger).json()
+                                       logger=self._logger).json()
         except RequestException as e:
-            self.logger.error("Error posting data to API: %s", e)
+            self._logger.error("Error posting data to API: %s", e)
 
     def starter_cli(self):
         currencies_list = self.get_currency_list()
@@ -112,10 +113,10 @@ class HodlhodlComScraper:
                     rate = Task(self.get_and_post_offers, name=f"get hodlhodl offers").submit(curr, trading_type,
                                                                                              return_state=True)
                     if rate.type != StateType.COMPLETED or not rate.result():
-                        self.logger.error('Task failed')
+                        self._logger.error('Task failed')
                         continue
                     count_offers(rate.result(), ScraperName.HODLHODL)
-                    self.logger.debug("Got %s rates", rate)
+                    self._logger.debug("Got %s rates", rate)
 
                     offer_counter = get_counter(ScraperName.HODLHODL)
                     return offer_counter
