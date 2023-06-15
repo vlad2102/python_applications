@@ -35,16 +35,6 @@ class FeedbackType(str, Enum):
     SCORE = "SCORE"
 
 class HodlHodlUserBase(BaseModel):
-    @classmethod
-    def convert_date(cls, date):
-        last_online = datetime.fromtimestamp(date).strftime("%Y-%m-%d")
-
-        return last_online
-
-    def __init__(self, **data):
-        # data["last_seen"] = self.convert_date(data["last_seen"])
-        return super().__init__(**data)
-
     username: str
     feedback_type: FeedbackType = FeedbackType.SCORE
     feedback_score: float
@@ -57,10 +47,14 @@ class HodlHodlUserBase(BaseModel):
     # 'seller_trades_count': offer.get("trader").get("trades_count"),
     # 'seller_url': offer.get("trader").get("url")
 
+    last_seen: str = None
+
+    @validator("last_seen", pre=True)
+    def last_seen_validate(cls, last_seen: float) -> str:
+        return datetime.fromtimestamp(last_seen).strftime("%Y-%m-%d")
+
 
 class Settings(BaseSettings):
-    
-
     class Config:
         env_file = '.env'
         env_file_encoding = "utf-8"
