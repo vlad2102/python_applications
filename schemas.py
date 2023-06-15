@@ -30,6 +30,10 @@ class HodlHodlOfferBase(BaseModel):
 
     coin_currency: CoinCurrency = CoinCurrency.BITCOIN
 
+
+class FeedbackType(str, Enum):
+    SCORE = "SCORE"
+
 class HodlHodlUserBase(BaseModel):
     @classmethod
     def convert_date(cls, date):
@@ -42,7 +46,7 @@ class HodlHodlUserBase(BaseModel):
         return super().__init__(**data)
 
     username: str
-    feedback_type: str = 'SCORE'
+    feedback_type: FeedbackType = FeedbackType.SCORE
     feedback_score: float
     trade_volume: Optional[str]
     completed_trades: int
