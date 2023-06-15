@@ -54,6 +54,9 @@ class HodlhodlComScraper:
         try:
             resp = requests.get(url).json()
             for offer in resp.get("offers"):
+                # Stopped here when I found how response data parsed to models.
+                # I think the best way is parse all response data to model, after that convert it to
+                # another model and send it to API.
                 offer_info = self.create_offer_data(offer)
                 seller_info = self.create_seller_data(offer)
                 self.post_data_to_api(seller_info, offer_info)
